@@ -43,7 +43,7 @@ module Shenzhen::Plugins
 
       def transport
         xcode = `xcode-select --print-path`.strip
-        tool = File.join(File.dirname(xcode), "Applications/Application Loader.app/Contents/MacOS/itms/bin/iTMSTransporter").gsub(/\s/, '\ ')
+        tool = transporter_path
 
         args = [tool, "-m upload", "-f Package.itmsp", "-u #{Shellwords.escape(@account)}", "-p #{Shellwords.escape(@password)}"]
         command = args.join(' ')
@@ -54,6 +54,19 @@ module Shenzhen::Plugins
         puts output.chomp if $verbose
 
         output
+      end
+
+      def transporter_path
+        xcode = `xcode-select --print-path`.strip + "/"
+        [
+          "../Applications/Application Loader.app/Contents/MacOS/itms/bin/iTMSTransporter",
+          "../Applications/Application Loader.app/Contents/itms/bin/iTMSTransporter"
+        ].each do |path|
+          result = File.join(xcode, path)
+          return result.gsub(/\s/, '\ ') if File.exists?(result)
+        end
+
+        raise "Could not find transporter. Make sure you set the correct path to your Xcode installation."
       end
 
       def metadata(apple_id, checksum, size)
